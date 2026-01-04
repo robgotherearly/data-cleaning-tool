@@ -142,7 +142,7 @@ if "cleaning_log" not in st.session_state:
 # Header
 st.markdown("""
 <div style="margin-bottom: 20px;">
-    <div class="header-title">🧹 Data Cleaning Tool</div>
+    <div class="header-title">🧹 Data Cleaning Tool by Robert Marsh Deku</div>
     <div class="header-subtitle">Automatically clean, validate, and transform your messy data</div>
 </div>
 """, unsafe_allow_html=True)
@@ -234,11 +234,13 @@ if uploaded_file:
                 
                 elif missing_strategy == "Fill with mode":
                     for col in st.session_state.df.columns:
-                        st.session_state.df[col] = st.session_state.df[col].fillna(st.session_state.df[col].mode()[0] if not st.session_state.df[col].mode().empty else "Unknown")
+                        if not st.session_state.df[col].mode().empty:
+                            st.session_state.df[col] = st.session_state.df[col].fillna(st.session_state.df[col].mode()[0])
+                        else:
+                            st.session_state.df[col] = st.session_state.df[col].fillna("Unknown")
                     st.session_state.cleaning_log.append("Filled columns with mode")
                 
                 st.success("✅ Missing values handled!")
-                st.rerun()
         else:
             st.info("✅ No missing values found!")
     
@@ -252,7 +254,6 @@ if uploaded_file:
                 st.session_state.df = st.session_state.df.drop_duplicates()
                 st.session_state.cleaning_log.append(f"Removed {dup_count} duplicate rows")
                 st.success(f"✅ Removed {dup_count} duplicate rows!")
-                st.rerun()
         else:
             st.info("✅ No duplicate rows found!")
     
@@ -264,10 +265,12 @@ if uploaded_file:
         cols_to_remove = st.multiselect("Select columns to remove:", st.session_state.df.columns, key="cols_remove")
         
         if st.button("❌ Remove Selected Columns", use_container_width=True, key="remove_cols"):
-            st.session_state.df = st.session_state.df.drop(columns=cols_to_remove)
-            st.session_state.cleaning_log.append(f"Removed columns: {', '.join(cols_to_remove)}")
-            st.success("✅ Columns removed!")
-            st.rerun()
+            if cols_to_remove:
+                st.session_state.df = st.session_state.df.drop(columns=cols_to_remove)
+                st.session_state.cleaning_log.append(f"Removed columns: {', '.join(cols_to_remove)}")
+                st.success("✅ Columns removed!")
+            else:
+                st.warning("Please select columns to remove")
     
     with col2:
         st.markdown("#### Data Type Conversion")
@@ -288,7 +291,6 @@ if uploaded_file:
                 
                 st.session_state.cleaning_log.append(f"Converted {col_to_convert} to {new_dtype}")
                 st.success(f"✅ Converted to {new_dtype}!")
-                st.rerun()
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
     
@@ -297,13 +299,12 @@ if uploaded_file:
     with col1:
         st.markdown("#### Remove Whitespace")
         
-        if st.button("📝 Trim Whitespace from All Text", use_container_width=True, key="trim_whitespace"):
+        if st.button("🔲 Trim Whitespace from All Text", use_container_width=True, key="trim_whitespace"):
             str_cols = st.session_state.df.select_dtypes(include=['object']).columns
             for col in str_cols:
                 st.session_state.df[col] = st.session_state.df[col].str.strip()
             st.session_state.cleaning_log.append("Trimmed whitespace from text columns")
             st.success("✅ Whitespace removed!")
-            st.rerun()
     
     with col2:
         st.markdown("#### Convert to Lowercase")
@@ -314,7 +315,6 @@ if uploaded_file:
                 st.session_state.df[col] = st.session_state.df[col].str.lower()
             st.session_state.cleaning_log.append("Converted text to lowercase")
             st.success("✅ Text converted to lowercase!")
-            st.rerun()
     
     # Preview cleaned data
     st.markdown("### 👁️ Preview Cleaned Data")
@@ -371,7 +371,6 @@ if uploaded_file:
             st.session_state.df = st.session_state.original_df.copy()
             st.session_state.cleaning_log = []
             st.success("✅ Reset to original data!")
-            st.rerun()
 
 else:
     st.markdown("""
